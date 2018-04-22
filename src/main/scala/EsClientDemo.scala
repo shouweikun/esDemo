@@ -22,8 +22,11 @@ object EsClientDemo {
       .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName("10.10.16.102"), 9300))
     val a = client.prepareGet("shopdata04121401", "shoptest04121401", "10000000000").setOperationThreaded(false)
       .get();
-    println(a.toString)
-    val functions = Array(new FunctionScoreQueryBuilder.FilterFunctionBuilder(QueryBuilders.boolQuery(), fieldValueFactorFunction("name").modifier(Modifier.LN).factor(2)))
+    println(a)
+    val sxx = client.prepareSearch("shopdata04121401", "shoptest04121401").setQuery(new QueryDemo().mallQueryDemo).get()
+    println(sxx)
+
+    val functions = Array(new FunctionScoreQueryBuilder.FilterFunctionBuilder(QueryBuilders.boolQuery(), fieldValueFactorFunction("name").modifier(Modifier.LN).factor(2)), new FunctionScoreQueryBuilder.FilterFunctionBuilder(fieldValueFactorFunction("name").modifier(Modifier.LN).factor(2)))
 
     val qb: QueryBuilder = QueryBuilders.functionScoreQuery(functions)
 
@@ -34,14 +37,16 @@ object EsClientDemo {
 
     println(b)
     println(c)
-    val dfdf = s"""_score*4+3 *doc['goodRate'].value+3*doc['sales'].value"""
+    val dfdf = s"""_score*0.5+0.3*Math.log(doc['goodRate'].value)+0.2*Math.log(doc['sales'].value);"""
 
     val d = QueryBuilders.wrapperQuery("[]")
     println(d)
-    val e = QueryBuilders.functionScoreQuery(new BoolQueryBuilder().should(QueryBuilders.matchPhraseQuery("name","淘宝")).should(QueryBuilders.matchPhraseQuery("subtitle","淘宝")), ScoreFunctionBuilders.scriptFunction(dfdf)).boostMode(CombineFunction.SUM)
-    println(e)
-    println(client.prepareSearch("shopdata04121401", "shoptest04121401").setQuery(e).get())
-    val f = QueryBuilders.matchQuery("name","华")
+    val e = QueryBuilders.functionScoreQuery(new BoolQueryBuilder().should(QueryBuilders.matchPhraseQuery("name", "小米").slop(3)).should(QueryBuilders.matchPhraseQuery("subtitle", "小米").slop(3)), ScoreFunctionBuilders.scriptFunction(dfdf)).boostMode(CombineFunction.SUM)
+    val ccc = new BoolQueryBuilder().should(QueryBuilders.matchPhraseQuery("name", "小米")).should(QueryBuilders.matchPhraseQuery("subtitle", "小米"))
+    println(client.prepareSearch("shopdata04121401", "shoptest04121401").setQuery(ccc).get())
+      println (client.prepareSearch("shopdata04121401", "shoptest04121401").setQuery(e).get())
+      println (client.prepareSearch("shopdata04121401", "shoptest04121401").setQuery(e).get())
+    val f = QueryBuilders.matchQuery("name", "华")
     println(client.prepareSearch("shopdata04121401", "shoptest04121401").setQuery(f).get())
     val g = QueryBuilders.matchAllQuery()
     println(client.prepareSearch("shopdata04121401", "shoptest04121401").setQuery(g).get())
